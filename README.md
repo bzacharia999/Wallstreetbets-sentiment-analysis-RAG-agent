@@ -191,22 +191,3 @@ python-dotenv
 ```
 
 ---
-
-## Environment Variables (`.env`)
-
-```
-OPENAI_API_KEY=...          # optional — only if using OpenAI LLM/embeddings
-```
-
----
-
-## Development Phases
-
-| Phase | Focus | Deliverable |
-|-------|-------|-------------|
-| **Phase 1** | Reddit scraping + caching | Working scraper, parquet output |
-| **Phase 2** | NLP preprocessing pipeline | Clean text column, ticker extraction |
-| **Phase 3** | BERTopic + sentiment | Topic clusters, sentiment labels, visualizations |
-| **Phase 4** | RAG agent | Vector store, retrieval chain, chat interface |
-| **Phase 5** | Streamlit integration | Full multi-page app with all tabs |
-| **Phase 6** | Polish & deploy | Error handling, `.env` management, Docker/Cloud Run |
