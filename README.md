@@ -127,7 +127,6 @@ Wallstreetbets-sentiment-analysis-RAG-agent/
 
 | Detail | Value |
 |--------|-------|
-| **Library** | `praw` (official Reddit API wrapper) |
 | **Input** | `n` (number of posts), sort method (`hot`, `top`, `new`) |
 | **Output** | DataFrame with columns: `title`, `selftext`, `score`, `num_comments`, `created_utc`, `author`, `url`, `flair` |
 | **Caching** | Save to `data/wsb_posts_{timestamp}.parquet` to avoid redundant API calls |
@@ -178,7 +177,6 @@ Wallstreetbets-sentiment-analysis-RAG-agent/
 
 ```
 streamlit
-praw
 pandas
 plotly
 bertopic
@@ -197,9 +195,6 @@ python-dotenv
 ## Environment Variables (`.env`)
 
 ```
-REDDIT_CLIENT_ID=...
-REDDIT_CLIENT_SECRET=...
-REDDIT_USER_AGENT=wsb-sentiment-agent/1.0
 OPENAI_API_KEY=...          # optional — only if using OpenAI LLM/embeddings
 ```
 
