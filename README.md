@@ -1,6 +1,6 @@
 # WSB Sentiment Analysis & RAG Agent
 
-A Streamlit application that scrapes r/wallstreetbets, performs NLP-driven sentiment analysis with BERTopic, and provides a RAG-powered Q&A agent grounded in subreddit context.
+A Streamlit application that ingests data from r/wallstreetbets, performs NLP-driven sentiment analysis with BERTopic, and provides a RAG-powered Q&A agent grounded in subreddit context.
 
 ---
 
