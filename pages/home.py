@@ -23,10 +23,10 @@ def render():
         """
         <div style="text-align:center; padding: 2rem 0 1rem;">
             <h1 style="font-size:2.8rem; margin:0;">
-                🚀 WSB Sentiment Analyzer
+                🚀 WallStreetBets Sentiment Analysis and Agent
             </h1>
             <p style="color:#9CA3AF; font-size:1.1rem; margin-top:0.5rem;">
-                Load · Analyze · Explore · Ask — all from r/wallstreetbets data
+                Load, analyze, and ask questions about data from r/wallstreetbets
             </p>
         </div>
         """,
