@@ -1,0 +1,27 @@
+# Core
+streamlit>=1.30.0
+pandas>=2.0.0
+plotly>=5.18.0
+python-dotenv>=1.0.0
+
+# Reddit API
+praw>=7.7.0
+
+# NLP
+spacy>=3.7.0
+emoji>=2.8.0
+
+# Topic Modeling & Sentiment
+bertopic>=0.16.0
+sentence-transformers>=2.2.0
+transformers>=4.36.0
+torch>=2.0.0
+
+# RAG
+langchain>=0.3.0
+langchain-ollama>=0.2.0
+langchain-community>=0.3.0
+chromadb>=0.4.0
+
+# Utilities
+pyarrow>=14.0.0
