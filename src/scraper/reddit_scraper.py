@@ -1,100 +1,182 @@
 """
-Reddit scraper using PRAW (Reddit's official API).
-Fetches top N posts from r/wallstreetbets with caching to parquet.
+Data loader — Kaggle WSB datasets + CSV file upload + parquet caching.
+Replaces the Reddit API scraper (no API credentials needed).
 """
 
-import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
+from io import BytesIO
 
 import pandas as pd
-import praw
 
-from src.utils.config import (
-    DATA_DIR,
-    REDDIT_CLIENT_ID,
-    REDDIT_CLIENT_SECRET,
-    REDDIT_USER_AGENT,
-)
+from src.utils.config import DATA_DIR
 
 
-def _get_reddit_client() -> praw.Reddit:
-    """Create a read-only Reddit client via official OAuth2 API."""
-    if not REDDIT_CLIENT_ID or not REDDIT_CLIENT_SECRET:
-        raise ValueError(
-            "Reddit API credentials not set. "
-            "Copy .env.example to .env and fill in REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET."
-        )
-    return praw.Reddit(
-        client_id=REDDIT_CLIENT_ID,
-        client_secret=REDDIT_CLIENT_SECRET,
-        user_agent=REDDIT_USER_AGENT,
-    )
+# ── Required columns (minimum for the pipeline to work) ────────────────────
+REQUIRED_COLS = {"title"}
+OPTIONAL_COLS = {
+    "selftext", "score", "num_comments", "created_utc",
+    "author", "url", "flair", "id", "upvote_ratio", "is_self",
+}
 
 
-def scrape_wsb(n: int = 100, sort: str = "hot") -> pd.DataFrame:
+def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Ensure the DataFrame has all expected columns, filling missing ones."""
+    df = df.copy()
+
+    # Must have at least 'title'
+    if "title" not in df.columns:
+        # Try common alternative names
+        for alt in ["Title", "post_title", "headline"]:
+            if alt in df.columns:
+                df = df.rename(columns={alt: "title"})
+                break
+        else:
+            raise ValueError(
+                "Dataset must contain a 'title' column. "
+                f"Found columns: {list(df.columns)}"
+            )
+
+    # Fill optional columns with defaults
+    defaults = {
+        "selftext": "",
+        "score": 0,
+        "num_comments": 0,
+        "created_utc": "",
+        "author": "unknown",
+        "url": "",
+        "flair": "",
+        "id": "",
+        "upvote_ratio": 0.0,
+        "is_self": True,
+    }
+    for col, default in defaults.items():
+        if col not in df.columns:
+            # Try common alternatives
+            alt_map = {
+                "selftext": ["body", "self_text", "text", "content", "post_text"],
+                "score": ["upvotes", "ups"],
+                "num_comments": ["comments", "comment_count"],
+                "author": ["user", "username", "poster"],
+                "flair": ["link_flair_text", "post_flair"],
+            }
+            found = False
+            for alt in alt_map.get(col, []):
+                if alt in df.columns:
+                    df = df.rename(columns={alt: col})
+                    found = True
+                    break
+            if not found:
+                df[col] = default
+
+    # Generate IDs if missing
+    if df["id"].eq("").all() or df["id"].isna().all():
+        df["id"] = [f"post_{i}" for i in range(len(df))]
+
+    # Ensure string types
+    for col in ["title", "selftext", "author", "url", "flair", "id"]:
+        df[col] = df[col].astype(str).fillna("")
+
+    return df
+
+
+# ── CSV / file upload ──────────────────────────────────────────────────────
+
+def load_from_uploaded_file(uploaded_file) -> pd.DataFrame:
     """
-    Fetch the top *n* posts from r/wallstreetbets.
+    Load data from a Streamlit UploadedFile object (CSV or JSON).
 
     Parameters
     ----------
-    n : int
-        Number of posts to retrieve (max ~1000 per Reddit API).
-    sort : str
-        One of "hot", "top", "new", "rising".
+    uploaded_file : streamlit.runtime.uploaded_file_manager.UploadedFile
 
     Returns
     -------
     pd.DataFrame
-        Columns: id, title, selftext, score, upvote_ratio, num_comments,
-        created_utc, author, url, flair, is_self.
     """
-    reddit = _get_reddit_client()
-    subreddit = reddit.subreddit("wallstreetbets")
+    name = uploaded_file.name.lower()
 
-    sort_methods = {
-        "hot": subreddit.hot,
-        "top": subreddit.top,
-        "new": subreddit.new,
-        "rising": subreddit.rising,
-    }
-    fetcher = sort_methods.get(sort, subreddit.hot)
+    if name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    elif name.endswith(".json") or name.endswith(".jsonl"):
+        df = pd.read_json(uploaded_file, lines=name.endswith(".jsonl"))
+    elif name.endswith(".parquet"):
+        df = pd.read_parquet(BytesIO(uploaded_file.read()))
+    else:
+        raise ValueError(f"Unsupported file format: {name}. Use CSV, JSON, JSONL, or Parquet.")
 
-    posts: list[dict] = []
-    for post in fetcher(limit=n):
-        if post.stickied:
-            continue  # Skip mod announcements
-        posts.append(
-            {
-                "id": post.id,
-                "title": post.title,
-                "selftext": post.selftext or "",
-                "score": post.score,
-                "upvote_ratio": post.upvote_ratio,
-                "num_comments": post.num_comments,
-                "created_utc": datetime.fromtimestamp(post.created_utc, tz=timezone.utc),
-                "author": str(post.author) if post.author else "[deleted]",
-                "url": post.url,
-                "flair": post.link_flair_text or "",
-                "is_self": post.is_self,
-            }
+    return _normalize_columns(df)
+
+
+def load_from_csv_path(path: str | Path) -> pd.DataFrame:
+    """Load from a local CSV/JSON/Parquet file path."""
+    path = Path(path)
+    if path.suffix == ".csv":
+        df = pd.read_csv(path)
+    elif path.suffix in (".json", ".jsonl"):
+        df = pd.read_json(path, lines=path.suffix == ".jsonl")
+    elif path.suffix == ".parquet":
+        df = pd.read_parquet(path)
+    else:
+        raise ValueError(f"Unsupported file format: {path.suffix}")
+    return _normalize_columns(df)
+
+
+# ── Kaggle dataset download ───────────────────────────────────────────────
+
+# Popular WSB datasets on Kaggle (slug → description)
+KAGGLE_DATASETS = {
+    "gpreda/reddit-wallstreetbets-posts": "Reddit WallStreetBets Posts (100k+ posts, updated regularly)",
+    "unanimad/reddit-rwallstreetbets": "r/WallStreetBets Posts & Comments",
+    "mattop/wallstreetbets-reddit-posts-2021": "WSB Posts 2021 (GME era)",
+}
+
+
+def load_from_kaggle(dataset_slug: str, max_rows: int | None = None) -> pd.DataFrame:
+    """
+    Download and load a Kaggle dataset.
+
+    Requires the `kagglehub` package and Kaggle credentials
+    (set via KAGGLE_USERNAME + KAGGLE_KEY env vars, or ~/.kaggle/kaggle.json).
+
+    Parameters
+    ----------
+    dataset_slug : str
+        Kaggle dataset slug, e.g. 'gpreda/reddit-wallstreetbets-posts'.
+    max_rows : int, optional
+        Limit number of rows loaded (for performance).
+    """
+    try:
+        import kagglehub
+    except ImportError:
+        raise ImportError(
+            "kagglehub is required for Kaggle downloads. "
+            "Install it with: pip install kagglehub"
         )
 
-    return pd.DataFrame(posts)
+    # Download dataset files to local cache
+    dataset_path = Path(kagglehub.dataset_download(dataset_slug))
 
+    # Find the primary data file (largest CSV/JSON/Parquet)
+    data_files = (
+        list(dataset_path.rglob("*.csv"))
+        + list(dataset_path.rglob("*.json"))
+        + list(dataset_path.rglob("*.parquet"))
+    )
+    if not data_files:
+        raise FileNotFoundError(
+            f"No CSV/JSON/Parquet files found in downloaded dataset at {dataset_path}"
+        )
 
-def scrape_with_backoff(
-    n: int, sort: str = "hot", max_retries: int = 3
-) -> pd.DataFrame:
-    """Scrape with exponential backoff on rate-limit errors."""
-    for attempt in range(max_retries):
-        try:
-            return scrape_wsb(n, sort)
-        except praw.exceptions.RedditAPIException as exc:
-            wait = 2**attempt * 10
-            print(f"Rate limited, retrying in {wait}s… ({exc})")
-            time.sleep(wait)
-    raise RuntimeError(f"Reddit API: max retries ({max_retries}) exceeded")
+    # Pick the largest file (usually the main dataset)
+    data_file = max(data_files, key=lambda f: f.stat().st_size)
+
+    df = load_from_csv_path(data_file)
+
+    if max_rows and len(df) > max_rows:
+        df = df.head(max_rows)
+
+    return df
 
 
 # ── Caching helpers ─────────────────────────────────────────────────────────

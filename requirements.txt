@@ -4,8 +4,8 @@ pandas>=2.0.0
 plotly>=5.18.0
 python-dotenv>=1.0.0
 
-# Reddit API
-praw>=7.7.0
+# Data Loading
+kagglehub>=0.3.0
 
 # NLP
 spacy>=3.7.0

@@ -10,10 +10,9 @@ from dotenv import load_dotenv
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 load_dotenv(_PROJECT_ROOT / ".env")
 
-# ── Reddit API ──────────────────────────────────────────────────────────────
-REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID", "")
-REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET", "")
-REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT", "wsb-sentiment-agent/1.0")
+# ── Kaggle (optional — only needed for Kaggle dataset downloads) ────────────
+KAGGLE_USERNAME = os.getenv("KAGGLE_USERNAME", "")
+KAGGLE_KEY = os.getenv("KAGGLE_KEY", "")
 
 # ── Ollama ──────────────────────────────────────────────────────────────────
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")

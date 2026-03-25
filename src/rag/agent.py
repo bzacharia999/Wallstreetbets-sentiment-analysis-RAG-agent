@@ -1,9 +1,11 @@
 """
 RAG agent — Ollama-powered retrieval-augmented generation for WSB Q&A.
+Uses LangChain Expression Language (LCEL) for the chain.
 """
 
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama import ChatOllama
 from langchain_community.vectorstores import Chroma
 
@@ -21,14 +23,33 @@ Reference specific posts when possible. You understand WSB terminology
 Context:
 {context}
 
-Question: {question}
+Question: {question}"""
 
-Answer:"""
+_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful WSB analyst. Answer based only on the provided context."),
+    ("human", WSB_SYSTEM_PROMPT),
+])
 
-_PROMPT = PromptTemplate(
-    template=WSB_SYSTEM_PROMPT,
-    input_variables=["context", "question"],
-)
+
+def _format_docs(docs):
+    """Format retrieved documents into a single context string."""
+    return "\n\n---\n\n".join(doc.page_content for doc in docs)
+
+
+# ── Wrapper to hold chain + retriever together ─────────────────────────────
+
+class RAGChain:
+    """Wraps the LCEL chain and retriever so we can access source docs."""
+
+    def __init__(self, chain, retriever):
+        self.chain = chain
+        self.retriever = retriever
+
+    def invoke(self, question: str) -> str:
+        return self.chain.invoke(question)
+
+    def get_source_docs(self, question: str):
+        return self.retriever.invoke(question)
 
 
 # ── Chain construction ──────────────────────────────────────────────────────
@@ -37,9 +58,9 @@ def create_rag_chain(
     vector_store: Chroma,
     model: str | None = None,
     temperature: float = 0.3,
-) -> RetrievalQA:
+) -> RAGChain:
     """
-    Build a RetrievalQA chain using a local Ollama model.
+    Build an LCEL RAG chain using a local Ollama model.
 
     Parameters
     ----------
@@ -63,20 +84,23 @@ def create_rag_chain(
         temperature=temperature,
     )
 
-    chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True,
-        chain_type_kwargs={"prompt": _PROMPT},
+    # LCEL chain: retrieve → format → prompt → LLM → parse
+    chain = (
+        {
+            "context": retriever | _format_docs,
+            "question": RunnablePassthrough(),
+        }
+        | _PROMPT
+        | llm
+        | StrOutputParser()
     )
 
-    return chain
+    return RAGChain(chain=chain, retriever=retriever)
 
 
 # ── Query helper ────────────────────────────────────────────────────────────
 
-def ask(chain: RetrievalQA, question: str) -> dict:
+def ask(rag: RAGChain, question: str) -> dict:
     """
     Query the RAG chain.
 
@@ -86,10 +110,14 @@ def ask(chain: RetrievalQA, question: str) -> dict:
         answer : str
         sources : list[dict] — each with content, author, score, sentiment.
     """
-    response = chain.invoke({"query": question})
+    # Get the answer
+    answer = rag.invoke(question)
+
+    # Retrieve source docs separately for display
+    source_docs = rag.get_source_docs(question)
 
     sources = []
-    for doc in response.get("source_documents", []):
+    for doc in source_docs:
         sources.append(
             {
                 "content": doc.page_content[:300],
@@ -101,6 +129,6 @@ def ask(chain: RetrievalQA, question: str) -> dict:
         )
 
     return {
-        "answer": response["result"],
+        "answer": answer,
         "sources": sources,
     }
