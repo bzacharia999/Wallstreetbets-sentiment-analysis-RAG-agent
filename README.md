@@ -4,6 +4,53 @@ A Streamlit application that scrapes r/wallstreetbets, performs NLP-driven senti
 
 ---
 
+## Setup and Installation
+
+1. **Clone the repository** (if you haven't already) and navigate to the project folder:
+   ```bash
+   cd Wallstreetbets-sentiment-analysis-RAG-agent
+   ```
+
+2. **Create a virtual environment** (recommended):
+   ```bash
+   python -m venv venv
+   # On Windows:
+   venv\Scripts\activate
+   # On macOS/Linux:
+   source venv/bin/activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Download the spaCy model**:
+   Required for NLP preprocessing (lemmatization and stop-word removal):
+   ```bash
+   python -m spacy download en_core_web_sm
+   ```
+
+5. **Set up Environment Variables**:
+   Copy the example environment file and fill in your details (if applicable):
+   ```bash
+   cp .env.example .env
+   ```
+
+---
+
+## Running the Application
+
+Once your setup is complete, you can launch the Streamlit application locally:
+
+```bash
+streamlit run app.py
+```
+
+The app will typically become available in your web browser at `http://localhost:8501`.
+
+---
+
 ## Architecture Overview
 
 ```mermaid
