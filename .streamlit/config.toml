@@ -1,17 +1,50 @@
 [theme]
-primaryColor = "#FF4500"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#1A1F2E"
-textColor = "#FAFAFA"
-font = "sans serif"
-
-[server]
-headless = true
-maxUploadSize = 1024
-maxMessageSize = 1024
-
-[browser]
-gatherUsageStats = false
+base = "light"
 
 [client]
 showSidebarNavigation = false
+
+primaryColor = "#ff4500"          # WSB/Reddit Orange
+backgroundColor = "#ffffff"       # White background
+secondaryBackgroundColor = "#f6f8fa" # Slightly darker for widgets to stand out
+textColor = "#1f2328"             # High-contrast dark text
+linkColor = "#ff4500"             # Orange links
+borderColor = "#d0d7de"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "8px"
+buttonRadius = "8px"
+
+# Typography
+font = "'Inter':https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+codeFontSize = "13px"
+codeTextColor = "#1f2328"
+codeBackgroundColor = "#f6f8fa"
+baseFontSize = 14
+baseFontWeight = 400
+headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
+headingFontWeights = [600, 600, 600, 500, 500, 500]
+linkUnderline = false
+
+# Custom semantic palette for dashboards
+blueColor = "#0969da"
+greenColor = "#1a7f37"            # Readable dark green for bullish
+yellowColor = "#bf8700"
+orangeColor = "#ff4500"           
+redColor = "#cf222e"              # Readable dark red for bearish
+violetColor = "#8250df"
+
+# Chart specific
+chartCategoricalColors = ["#ff4500", "#0969da", "#1a7f37", "#cf222e", "#8250df", "#bf8700"]
+
+# DataFrame Styling
+dataframeBorderColor = "#d0d7de"
+dataframeHeaderBackgroundColor = "#f6f8fa"
+
+[theme.sidebar]
+backgroundColor = "#f6f8fa"       # Light gray sidebar 
+secondaryBackgroundColor = "#eaeef2"
+codeBackgroundColor = "#eaeef2"
+textColor = "#1f2328"
+borderColor = "#d0d7de"

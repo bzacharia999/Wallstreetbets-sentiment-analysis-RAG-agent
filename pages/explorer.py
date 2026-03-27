@@ -1,5 +1,5 @@
 """
-🔍 Explorer page — searchable, filterable table of scraped posts.
+Explorer page — searchable, filterable table of scraped posts.
 """
 
 import streamlit as st
@@ -8,12 +8,12 @@ import pandas as pd
 
 def render():
     st.markdown(
-        "<h1 style='text-align:center;'>🔍 Post Explorer</h1>",
+        "<h1 style='text-align:center;'>Post Explorer</h1>",
         unsafe_allow_html=True,
     )
 
     if "df" not in st.session_state:
-        st.warning("No data loaded. Go to **🏠 Home** to scrape posts first.")
+        st.warning("No data loaded. Go to **Home** to load posts first.")
         return
 
     df: pd.DataFrame = st.session_state["df"]
@@ -38,7 +38,7 @@ def render():
         )
 
     with col3:
-        search_term = st.text_input("🔎 Search titles", placeholder="e.g. GME, TSLA…")
+        search_term = st.text_input("Search titles", placeholder="e.g. GME, TSLA")
 
     # ── Apply filters ───────────────────────────────────────────────────
     mask = df["sentiment_label"].isin(sentiment_filter)
@@ -84,7 +84,7 @@ def render():
     # ── Expandable post detail ──────────────────────────────────────────
     st.divider()
     if not filtered.empty:
-        with st.expander("📄 View full text of selected post"):
+        with st.expander("View full text of selected post"):
             idx = st.selectbox(
                 "Select post",
                 options=filtered.index.tolist(),
@@ -94,9 +94,9 @@ def render():
                 row = filtered.loc[idx]
                 st.markdown(f"### {row['title']}")
                 st.caption(
-                    f"by u/{row.get('author', '?')} · "
-                    f"⬆ {row.get('score', 0)} · "
-                    f"💬 {row.get('num_comments', 0)} · "
+                    f"by u/{row.get('author', '?')} | "
+                    f"Score: {row.get('score', 0)} | "
+                    f"Comments: {row.get('num_comments', 0)} | "
                     f"Sentiment: {row.get('sentiment_label', '?')}"
                 )
                 st.markdown(row.get("selftext", "") or "*No body text*")

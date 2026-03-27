@@ -62,10 +62,13 @@ def create_vector_store(chunks: list[Document]) -> Chroma:
 
     If a previous store exists it is deleted first to avoid duplicates.
     """
-    # Clear old store if it exists
-    chroma_path = Path(CHROMA_DIR)
-    if chroma_path.exists():
-        shutil.rmtree(chroma_path)
+    # Try to clear the existing collection using the Chroma API 
+    # instead of trying to delete the locked folder on disk (which causes WinError 32).
+    try:
+        db = Chroma(persist_directory=CHROMA_DIR, embedding_function=_get_embeddings())
+        db.delete_collection()
+    except Exception:
+        pass
 
     vector_store = Chroma.from_documents(
         documents=chunks,

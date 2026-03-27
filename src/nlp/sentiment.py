@@ -11,7 +11,7 @@ from transformers import pipeline as hf_pipeline
 from src.utils.config import EMBEDDING_MODEL, SENTIMENT_MODEL
 
 
-# ── Topic modeling ──────────────────────────────────────────────────────────
+# Topic modeling
 
 def create_topic_model(
     docs: list[str],
@@ -39,7 +39,7 @@ def create_topic_model(
     return topic_model, topics
 
 
-# ── Sentiment classification ───────────────────────────────────────────────
+# Sentiment classification
 
 def create_sentiment_pipeline(model_name: str = SENTIMENT_MODEL):
     """Load a HuggingFace sentiment-analysis pipeline (default: FinBERT)."""
@@ -59,7 +59,7 @@ def classify_sentiment(
     return sentiment_pipe(texts, batch_size=batch_size)
 
 
-# ── Combined pipeline ──────────────────────────────────────────────────────
+# Combined pipeline
 
 def analyze(df: pd.DataFrame) -> tuple[pd.DataFrame, BERTopic]:
     """
@@ -71,7 +71,7 @@ def analyze(df: pd.DataFrame) -> tuple[pd.DataFrame, BERTopic]:
     df = df.copy()
     docs = df["clean_text"].tolist()
 
-    # ── Topics ──
+    # Topics
     topic_model, topics = create_topic_model(docs)
     df["topic_id"] = topics
 
@@ -79,7 +79,7 @@ def analyze(df: pd.DataFrame) -> tuple[pd.DataFrame, BERTopic]:
     topic_map = dict(zip(topic_info["Topic"], topic_info["Name"]))
     df["topic_label"] = df["topic_id"].map(topic_map)
 
-    # ── Sentiment ──
+    # Sentiment
     sentiment_pipe = create_sentiment_pipeline()
     sentiments = classify_sentiment(docs, sentiment_pipe)
     df["sentiment_label"] = [s["label"] for s in sentiments]
@@ -88,7 +88,7 @@ def analyze(df: pd.DataFrame) -> tuple[pd.DataFrame, BERTopic]:
     return df, topic_model
 
 
-# ── Visualizations ─────────────────────────────────────────────────────────
+# Visualizations
 
 _SENTIMENT_COLORS = {
     "positive": "#22c55e",

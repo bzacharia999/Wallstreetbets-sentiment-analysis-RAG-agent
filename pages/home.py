@@ -1,15 +1,13 @@
 """
-🏠 Home page — data loading (CSV upload / Kaggle) and full analysis pipeline.
+Home page — data loading (CSV upload / cached data) and full analysis pipeline.
 """
 
 import streamlit as st
 
 from src.scraper.reddit_scraper import (
     load_from_uploaded_file,
-    load_from_kaggle,
     save_posts,
     load_latest_posts,
-    KAGGLE_DATASETS,
 )
 from src.nlp.preprocessing import preprocess_posts
 from src.nlp.sentiment import analyze
@@ -18,12 +16,12 @@ from src.rag.agent import create_rag_chain
 
 
 def render():
-    # ── Hero section ────────────────────────────────────────────────────
+    # Hero section
     st.markdown(
         """
         <div style="text-align:center; padding: 2rem 0 1rem;">
             <h1 style="font-size:2.8rem; margin:0;">
-                🚀 WallStreetBets Sentiment Analysis and Agent
+                WallStreetBets Sentiment Analysis and Agent
             </h1>
             <p style="color:#9CA3AF; font-size:1.1rem; margin-top:0.5rem;">
                 Load, analyze, and ask questions about data from r/wallstreetbets
@@ -35,31 +33,29 @@ def render():
 
     st.divider()
 
-    # ── Data source selection ───────────────────────────────────────────
+    # Data source selection
     source_tab = st.radio(
         "Choose data source",
-        ["📁 Upload CSV / JSON / Parquet", "📦 Download from Kaggle", "💾 Load previous session"],
+        ["Upload CSV / JSON / Parquet", "Load previous session"],
         horizontal=True,
     )
 
     df = None
 
-    if source_tab == "📁 Upload CSV / JSON / Parquet":
+    if source_tab == "Upload CSV / JSON / Parquet":
         df = _upload_section()
-    elif source_tab == "📦 Download from Kaggle":
-        df = _kaggle_section()
-    elif source_tab == "💾 Load previous session":
+    elif source_tab == "Load previous session":
         df = _load_previous_section()
 
-    # ── Pipeline execution ──────────────────────────────────────────────
+    # Pipeline execution
     if df is not None:
         _run_pipeline(df)
 
-    # ── Show status if data already loaded ──────────────────────────────
+    # Show status if data already loaded
     elif "df" in st.session_state:
         loaded_df = st.session_state["df"]
         st.info(
-            f"📦 **{len(loaded_df)}** posts already loaded in this session. "
+            f"**{len(loaded_df)}** posts already loaded in this session. "
             f"Navigate to other tabs or load new data."
         )
 
@@ -92,62 +88,19 @@ def _upload_section() -> "pd.DataFrame | None":
     with col2:
         st.write("")
         st.write("")
-        run = st.button("🚀 Load & Analyze", type="primary", use_container_width=True)
+        run = st.button("Load & Analyze", type="primary", use_container_width=True)
 
     if run and uploaded:
         try:
             df = load_from_uploaded_file(uploaded)
             if len(df) > max_rows:
                 df = df.head(max_rows)
-            st.write(f"✅ Loaded **{len(df)}** rows from `{uploaded.name}`")
+            st.write(f"Loaded **{len(df)}** rows from `{uploaded.name}`")
             return df
         except Exception as exc:
             st.error(f"Failed to load file: {exc}")
     elif run and not uploaded:
         st.warning("Please upload a file first.")
-
-    return None
-
-
-def _kaggle_section() -> "pd.DataFrame | None":
-    """Kaggle download UI."""
-    st.markdown("#### Download a WSB dataset from Kaggle")
-    st.caption(
-        "Downloads directly from Kaggle. Requires `kagglehub` installed and "
-        "Kaggle credentials set up "
-        "([instructions](https://www.kaggle.com/docs/api#getting-started-installation-&-authentication))."
-    )
-
-    # Dataset selector
-    dataset_options = {v: k for k, v in KAGGLE_DATASETS.items()}
-    selected_desc = st.selectbox("Dataset", options=list(dataset_options.keys()))
-    dataset_slug = dataset_options[selected_desc]
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        max_rows = st.slider(
-            "Max rows",
-            min_value=50,
-            max_value=5000,
-            value=500,
-            step=50,
-            key="kaggle_max_rows",
-        )
-    with col2:
-        st.write("")
-        st.write("")
-        run = st.button("⬇️ Download & Analyze", type="primary", use_container_width=True)
-
-    if run:
-        try:
-            with st.spinner(f"Downloading `{dataset_slug}` from Kaggle…"):
-                df = load_from_kaggle(dataset_slug, max_rows=max_rows)
-            st.write(f"✅ Loaded **{len(df)}** rows from Kaggle")
-            return df
-        except ImportError as exc:
-            st.error(str(exc))
-        except Exception as exc:
-            st.error(f"Kaggle download failed: {exc}")
 
     return None
 
@@ -159,7 +112,7 @@ def _load_previous_section() -> "pd.DataFrame | None":
     prev_df = load_latest_posts()
     if prev_df is not None:
         st.write(f"Found saved data: **{len(prev_df)}** posts")
-        if st.button("📂 Load & Re-analyze", type="primary"):
+        if st.button("Load & Re-analyze", type="primary"):
             return prev_df
     else:
         st.info("No previously saved data found in `data/`.")
@@ -171,43 +124,43 @@ def _run_pipeline(df):
     """Run the full NLP + RAG pipeline on a loaded DataFrame."""
     with st.status("Running analysis pipeline…", expanded=True) as status:
         # Step 1 — Preprocess
-        st.write("🧹  Cleaning & preprocessing text…")
+        st.write("Cleaning & preprocessing text...")
         df = preprocess_posts(df)
-        st.write(f"✅  **{len(df)}** posts after filtering")
+        st.write(f"**{len(df)}** posts after filtering")
 
         if len(df) < 5:
             st.error("Too few posts after filtering. Need at least 5. Try loading more data.")
             return
 
         # Step 2 — Topic + Sentiment analysis
-        st.write("🧠  Running BERTopic + FinBERT sentiment analysis…")
+        st.write("Running BERTopic + FinBERT sentiment analysis...")
         df, topic_model = analyze(df)
-        st.write("✅  Topics & sentiment labels assigned")
+        st.write("Topics & sentiment labels assigned")
 
         # Step 3 — Save
         path = save_posts(df)
-        st.write(f"💾  Saved to `{path.name}`")
+        st.write(f"Saved to `{path.name}`")
 
         # Step 4 — Build RAG index
-        st.write("📚  Building vector store for RAG agent…")
+        st.write("Building vector store for RAG agent...")
         vector_store = build_index(df)
         rag_chain = create_rag_chain(vector_store)
-        st.write("✅  RAG index ready")
+        st.write("RAG index ready")
 
         # Persist to session state
         st.session_state["df"] = df
         st.session_state["topic_model"] = topic_model
         st.session_state["rag_chain"] = rag_chain
 
-        status.update(label="✅ Pipeline complete!", state="complete")
+        status.update(label="Pipeline complete!", state="complete")
 
-    # ── Summary ─────────────────────────────────────────────────────
+    # Summary
     st.success(f"Analyzed **{len(df)}** posts successfully!")
 
     col1, col2, col3 = st.columns(3)
     n_pos = len(df[df["sentiment_label"] == "positive"])
     n_neg = len(df[df["sentiment_label"] == "negative"])
     n_neu = len(df[df["sentiment_label"] == "neutral"])
-    col1.metric("Bullish 🟢", n_pos)
-    col2.metric("Bearish 🔴", n_neg)
-    col3.metric("Neutral ⚪", n_neu)
+    col1.metric("Bullish", n_pos)
+    col2.metric("Bearish", n_neg)
+    col3.metric("Neutral", n_neu)

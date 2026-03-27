@@ -20,7 +20,7 @@ except OSError:
         f"Run: python -m spacy download {SPACY_MODEL}"
     )
 
-# ── Ticker extraction ──────────────────────────────────────────────────────
+# Ticker extraction
 
 _TICKER_PATTERN = re.compile(r"\$([A-Z]{1,5})\b")
 _COMMON_WORDS = frozenset({
@@ -38,7 +38,7 @@ def extract_tickers(text: str) -> list[str]:
     return list(dict.fromkeys(t for t in matches if t not in _COMMON_WORDS))
 
 
-# ── Text cleaning ──────────────────────────────────────────────────────────
+# Text cleaning
 
 def clean_text(text: str) -> str:
     """
@@ -71,7 +71,7 @@ def clean_text(text: str) -> str:
     return text
 
 
-# ── Lemmatization ──────────────────────────────────────────────────────────
+# Lemmatization
 
 def lemmatize(text: str) -> str:
     """Lemmatize text with stop-word and punctuation removal (spaCy)."""
@@ -85,7 +85,7 @@ def lemmatize(text: str) -> str:
     )
 
 
-# ── Full pipeline ──────────────────────────────────────────────────────────
+# Full pipeline
 
 def preprocess_posts(df: pd.DataFrame) -> pd.DataFrame:
     """

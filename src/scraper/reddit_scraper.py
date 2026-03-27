@@ -1,5 +1,5 @@
 """
-Data loader — Kaggle WSB datasets + CSV file upload + parquet caching.
+Data loader — CSV file upload + parquet caching.
 Replaces the Reddit API scraper (no API credentials needed).
 """
 
@@ -122,64 +122,7 @@ def load_from_csv_path(path: str | Path) -> pd.DataFrame:
     return _normalize_columns(df)
 
 
-# ── Kaggle dataset download ───────────────────────────────────────────────
-
-# Popular WSB datasets on Kaggle (slug → description)
-KAGGLE_DATASETS = {
-    "gpreda/reddit-wallstreetbets-posts": "Reddit WallStreetBets Posts (100k+ posts, updated regularly)",
-    "unanimad/reddit-rwallstreetbets": "r/WallStreetBets Posts & Comments",
-    "mattop/wallstreetbets-reddit-posts-2021": "WSB Posts 2021 (GME era)",
-}
-
-
-def load_from_kaggle(dataset_slug: str, max_rows: int | None = None) -> pd.DataFrame:
-    """
-    Download and load a Kaggle dataset.
-
-    Requires the `kagglehub` package and Kaggle credentials
-    (set via KAGGLE_USERNAME + KAGGLE_KEY env vars, or ~/.kaggle/kaggle.json).
-
-    Parameters
-    ----------
-    dataset_slug : str
-        Kaggle dataset slug, e.g. 'gpreda/reddit-wallstreetbets-posts'.
-    max_rows : int, optional
-        Limit number of rows loaded (for performance).
-    """
-    try:
-        import kagglehub
-    except ImportError:
-        raise ImportError(
-            "kagglehub is required for Kaggle downloads. "
-            "Install it with: pip install kagglehub"
-        )
-
-    # Download dataset files to local cache
-    dataset_path = Path(kagglehub.dataset_download(dataset_slug))
-
-    # Find the primary data file (largest CSV/JSON/Parquet)
-    data_files = (
-        list(dataset_path.rglob("*.csv"))
-        + list(dataset_path.rglob("*.json"))
-        + list(dataset_path.rglob("*.parquet"))
-    )
-    if not data_files:
-        raise FileNotFoundError(
-            f"No CSV/JSON/Parquet files found in downloaded dataset at {dataset_path}"
-        )
-
-    # Pick the largest file (usually the main dataset)
-    data_file = max(data_files, key=lambda f: f.stat().st_size)
-
-    df = load_from_csv_path(data_file)
-
-    if max_rows and len(df) > max_rows:
-        df = df.head(max_rows)
-
-    return df
-
-
-# ── Caching helpers ─────────────────────────────────────────────────────────
+# Caching helpers
 
 def save_posts(df: pd.DataFrame) -> Path:
     """Save DataFrame to a timestamped parquet file in data/."""

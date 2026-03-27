@@ -12,7 +12,6 @@ from langchain_community.vectorstores import Chroma
 from src.utils.config import OLLAMA_MODEL, OLLAMA_BASE_URL
 
 
-# ── Prompt ──────────────────────────────────────────────────────────────────
 
 WSB_SYSTEM_PROMPT = """You are a knowledgeable analyst of the r/wallstreetbets subreddit.
 You answer questions based ONLY on the provided context from real WSB posts.
@@ -36,7 +35,7 @@ def _format_docs(docs):
     return "\n\n---\n\n".join(doc.page_content for doc in docs)
 
 
-# ── Wrapper to hold chain + retriever together ─────────────────────────────
+# Wrapper to hold chain + retriever together
 
 class RAGChain:
     """Wraps the LCEL chain and retriever so we can access source docs."""
@@ -52,7 +51,7 @@ class RAGChain:
         return self.retriever.invoke(question)
 
 
-# ── Chain construction ──────────────────────────────────────────────────────
+# Chain construction
 
 def create_rag_chain(
     vector_store: Chroma,
@@ -98,7 +97,7 @@ def create_rag_chain(
     return RAGChain(chain=chain, retriever=retriever)
 
 
-# ── Query helper ────────────────────────────────────────────────────────────
+# Query helper
 
 def ask(rag: RAGChain, question: str) -> dict:
     """
