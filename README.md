@@ -166,10 +166,10 @@ Wallstreetbets-sentiment-analysis-RAG-agent/
 
 | Page / Tab | Content |
 |------------|---------|
-| **🏠 Home** | Overview, scrape controls (select N, sort type) |
-| **📊 Dashboard** | Sentiment distribution, topic clusters, trending tickers, time-series charts |
-| **🔍 Explorer** | Searchable/filterable table of scraped posts with per-row sentiment |
-| **🤖 Ask WSB** | RAG chat interface — user types a question, gets an answer grounded in scraped posts |
+| **Home** | Overview, scrape controls (select N, sort type) |
+| **Dashboard** | Sentiment distribution, topic clusters, trending tickers, time-series charts |
+| **Explorer** | Searchable/filterable table of scraped posts with per-row sentiment |
+| **Ask WSB** | RAG chat interface — user types a question, gets an answer grounded in scraped posts |
 
 ---
 
