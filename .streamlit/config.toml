@@ -48,3 +48,6 @@ secondaryBackgroundColor = "#eaeef2"
 codeBackgroundColor = "#eaeef2"
 textColor = "#1f2328"
 borderColor = "#d0d7de"
+
+[server]
+maxUploadSize = 1024
